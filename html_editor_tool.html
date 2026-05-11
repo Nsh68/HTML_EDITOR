@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>עורך HTML גנרי</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    font-size: 15px;
+    color: #1e1e2e;
+    background: #f4f6f8;
+    padding: 2rem;
+    direction: rtl;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a3a5c;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+  .upload-zone {
+    border: 2px dashed #c8d0d8;
+    border-radius: 12px;
+    padding: 2.5rem;
+    text-align: center;
+    background: white;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    background: #d0e4f5;
+    border-color: #2e6da4;
+  }
+  .upload-icon { font-size: 40px; margin-bottom: 10px; }
+  .upload-zone p { color: #555; margin-bottom: 8px; }
+  .upload-zone small { color: #888; }
+  textarea#paste-input {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+    border: 1px solid #c8d0d8;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 12px;
+    direction: ltr;
+    resize: vertical;
+  }
+  button {
+    background: white;
+    border: 1px solid #c8d0d8;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button:hover { background: #d0e4f5; border-color: #2e6da4; }
+  button.primary {
+    background: #2e6da4;
+    color: white;
+    border-color: #2e6da4;
+  }
+  button.primary:hover { background: #1a3a5c; }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 1rem;
+    background: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: 1px solid #e0e4ea;
+  }
+  .toolbar-left { display: flex; align-items: center; gap: 8px; }
+  .toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; }
+  input[type="text"]#search-box {
+    padding: 6px 10px;
+    border: 1px solid #c8d0d8;
+    border-radius: 6px;
+    font-size: 13px;
+    width: 200px;
+    direction: rtl;
+  }
+  .field-count { font-size: 12px; color: #888; }
+  .field-wrap {
+    background: white;
+    border: 1px solid #e0e4ea;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    transition: border-color 0.15s;
+  }
+  .field-wrap:focus-within { border-color: #2e6da4; }
+  .field-label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .tag-badge {
+    font-size: 11px;
+    font-family: monospace;
+    background: #f0f2f4;
+    color: #555;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid #e0e4ea;
+  }
+  .changed-badge {
+    font-size: 11px;
+    color: #c07a20;
+    display: none;
+  }
+  .field-input, .field-textarea {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #c8d0d8;
+    border-radius: 6px;
+    font-size: 13px;
+    direction: rtl;
+    font-family: inherit;
+  }
+  .field-textarea { resize: vertical; }
+  .field-input:focus, .field-textarea:focus {
+    outline: none;
+    border-color: #2e6da4;
+    box-shadow: 0 0 0 2px rgba(46,109,164,0.15);
+  }
+  .msg {
+    display: none;
+    margin-top: 10px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .msg.success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+  #editor-section { display: none; }
+  .step-guide {
+    background: #e8f0fa;
+    border: 1px solid #b5d4f4;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 1.5rem;
+    font-size: 13px;
+    color: #1a3a5c;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<h1>✏️ עורך HTML גנרי</h1>
+<p class="subtitle">טעיני כל קובץ HTML — ערכי את הטקסטים — הורידי את הקובץ המעודכן</p>
+
+<div class="step-guide">
+  <strong>איך משתמשים:</strong><br>
+  1️⃣ גרררי קובץ HTML לתיבה למטה (או לחצי "בחרי קובץ")<br>
+  2️⃣ ערכי את הטקסטים שמופיעים בשדות<br>
+  3️⃣ לחצי <strong>"הורד HTML מעודכן"</strong> — וקבלי קובץ מוכן
+</div>
+
+<div class="upload-zone" id="upload-zone"
+  ondragover="event.preventDefault(); this.classList.add('drag-over')"
+  ondragleave="this.classList.remove('drag-over')"
+  ondrop="handleDrop(event)">
+  <div class="upload-icon">📂</div>
+  <p><strong>גרררי קובץ HTML לכאן</strong></p>
+  <small>או</small><br><br>
+  <button onclick="document.getElementById('file-input').click()">בחרי קובץ מהמחשב</button>
+  <input type="file" id="file-input" accept=".html,.htm" style="display:none" onchange="handleFile(this.files[0])">
+  <br><br>
+  <small>או הדביקי קוד HTML ישירות:</small>
+  <textarea id="paste-input" rows="4" placeholder="הדביקי קוד HTML כאן..."></textarea>
+  <br>
+  <button onclick="loadFromPaste()" style="margin-top:8px;">טעני HTML מהטקסט</button>
+</div>
+
+<div id="editor-section">
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input type="text" id="search-box" placeholder="🔍 חיפוש טקסט..." oninput="filterFields(this.value)">
+      <span class="field-count" id="field-count"></span>
+    </div>
+    <div class="toolbar-right">
+      <button onclick="copyHTML()">📋 העתק HTML מעודכן</button>
+      <button class="primary" onclick="downloadHTML()">⬇️ הורד HTML מעודכן</button>
+      <button onclick="resetEditor()">🔄 קובץ חדש</button>
+    </div>
+  </div>
+
+  <div id="fields-container"></div>
+
+  <div class="msg success" id="copy-msg">✅ HTML מעודכן הועתק ללוח! הדביקי אותו בקובץ שלך.</div>
+  <div class="msg success" id="dl-msg">✅ הקובץ הורד בהצלחה!</div>
+</div>
+
+<script>
+let originalHTML = '';
+let fields = [];
+let filename = 'edited.html';
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+}
+
+function handleFile(f) {
+  if (!f) return;
+  filename = f.name;
+  const reader = new FileReader();
+  reader.onload = e => parseHTML(e.target.result);
+  reader.readAsText(f, 'UTF-8');
+}
+
+function loadFromPaste() {
+  const val = document.getElementById('paste-input').value.trim();
+  if (val) { filename = 'pasted.html'; parseHTML(val); }
+  else alert('אנא הדביקי קוד HTML תחילה');
+}
+
+function parseHTML(html) {
+  originalHTML = html;
+  fields = [];
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const skip = new Set(['script','style','head','meta','link','noscript','br','hr','img','input','select','option']);
+  let idx = 0;
+
+  function walk(node) {
+    if (node.nodeType === 3) {
+      const txt = node.textContent.trim();
+      if (txt.length > 1) {
+        const parent = node.parentElement;
+        if (parent && !skip.has(parent.tagName.toLowerCase())) {
+          const tag = parent.tagName.toLowerCase();
+          const id = parent.id ? '#' + parent.id : '';
+          const cls = Array.from(parent.classList).filter(c => c.length < 30).slice(0,2).join('.');
+          const label = id || (cls ? '.' + cls : tag);
+          fields.push({ idx: idx++, original: txt, current: txt, label, isMultiline: txt.length > 80 });
+        }
+      }
+    } else if (node.nodeType === 1 && !skip.has(node.tagName.toLowerCase())) {
+      node.childNodes.forEach(walk);
+    }
+  }
+  doc.body.childNodes.forEach(walk);
+
+  renderFields(fields);
+  document.getElementById('upload-zone').style.display = 'none';
+  document.getElementById('editor-section').style.display = 'block';
+  updateCount(fields.length, fields.length);
+}
+
+function renderFields(list) {
+  const c = document.getElementById('fields-container');
+  c.innerHTML = '';
+  list.forEach(f => {
+    const wrap = document.createElement('div');
+    wrap.className = 'field-wrap';
+    const labelRow = document.createElement('div');
+    labelRow.className = 'field-label-row';
+    const badge = document.createElement('span');
+    badge.className = 'tag-badge';
+    badge.textContent = f.label;
+    const changed = document.createElement('span');
+    changed.className = 'changed-badge';
+    changed.id = 'ch-' + f.idx;
+    changed.textContent = '✏️ שונה';
+    labelRow.appendChild(badge);
+    labelRow.appendChild(changed);
+    wrap.appendChild(labelRow);
+
+    if (f.isMultiline) {
+      const ta = document.createElement('textarea');
+      ta.className = 'field-textarea';
+      ta.value = f.current;
+      ta.rows = Math.min(6, Math.ceil(f.current.length / 60) + 1);
+      ta.oninput = () => { f.current = ta.value; mark(f); };
+      wrap.appendChild(ta);
+    } else {
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'field-input';
+      inp.value = f.current;
+      inp.oninput = () => { f.current = inp.value; mark(f); };
+      wrap.appendChild(inp);
+    }
+    c.appendChild(wrap);
+  });
+}
+
+function mark(f) {
+  const el = document.getElementById('ch-' + f.idx);
+  if (el) el.style.display = f.current !== f.original ? 'inline' : 'none';
+}
+
+function filterFields(q) {
+  const lq = q.toLowerCase();
+  const vis = fields.filter(f =>
+    !lq || f.current.toLowerCase().includes(lq) ||
+    f.original.toLowerCase().includes(lq) ||
+    f.label.toLowerCase().includes(lq)
+  );
+  renderFields(vis);
+  updateCount(vis.length, fields.length);
+}
+
+function updateCount(shown, total) {
+  document.getElementById('field-count').textContent =
+    shown === total ? total + ' שדות' : shown + ' מתוך ' + total;
+}
+
+function buildHTML() {
+  let html = originalHTML;
+  fields.forEach(f => {
+    if (f.original !== f.current && f.original.length > 0) {
+      html = html.split(f.original).join(f.current);
+    }
+  });
+  return html;
+}
+
+function copyHTML() {
+  navigator.clipboard.writeText(buildHTML()).then(() => {
+    show('copy-msg');
+  });
+}
+
+function downloadHTML() {
+  const blob = new Blob([buildHTML()], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename.replace(/\.html?$/i, '') + '_edited.html';
+  a.click();
+  show('dl-msg');
+}
+
+function show(id) {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+function resetEditor() {
+  originalHTML = '';
+  fields = [];
+  document.getElementById('upload-zone').style.display = 'block';
+  document.getElementById('editor-section').style.display = 'none';
+  document.getElementById('paste-input').value = '';
+  document.getElementById('search-box').value = '';
+  document.getElementById('fields-container').innerHTML = '';
+}
+</script>
+</body>
+</html>
